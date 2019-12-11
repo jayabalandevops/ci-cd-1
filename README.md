@@ -59,6 +59,15 @@ Install Jenkins
     browse with url - localhost:8080/jenkins
     copy paste the initialadminpassword from the file .jenkins/secrets/initialadminpassword file
     and select the default plugins to install and create a new user
+    maven invoker, deploy to container, github
+    set up credentials for tomcat servers
+      tomcat-users.xml
+        deployer with role manager-script 
+    
+    goto jenkins, add credentials,
+      username - deployer
+      password:
+      id and descriptions
     
 
 - In global configuration tool, add JAVA_HOME and Maven path
@@ -80,7 +89,7 @@ Git clone the simple web app, in local machine using gitbash.
 ## 6. Launch another instance and install java and tomcat for Web Server
 
 Start web server
-
+    
     catalina.sh start
 
     
@@ -91,6 +100,20 @@ Create a new free style job
     choose maven project, say ok.
     configure the job
     select git as SCM and provide the github https URL
+    build - maven goal as
+      clean package install
+    post-build actions
+      war/ear files
+       **/*.war
+      context path - leave it emplty
+      containers - select tomcat 8.x
+      Also need to provide tomcat credentials
+        choose - deployer/***
+        tomcat url: http://the romoteserverIP:8080
+   
+Now build the job
+
+Check the directory of webapps to confirm.
     
     
 ## 6. Test
