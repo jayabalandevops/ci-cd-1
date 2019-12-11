@@ -2,7 +2,7 @@
 # Web Application in CI-CD
 
 This is a simple web application using java and jsp.
-This is used in the demonstration of development of java web applications. 
+This is used in the demonstration of CI CD pipeline job. 
   
   Below are the steps required to get this working on a base linux system.
   
@@ -14,11 +14,13 @@ This is used in the demonstration of development of java web applications.
    
 ## 1. Provision and Install RHEL8 in aws
   
-  Provision an instance with RHEL8
+  - Provision an instance with RHEL8
+  - Install Java, maven, git
+  
 
     yum -y install java-1.8* maven git
-
-   
+    
+    
 ## 2. Install and Configure tomcat
     
  Install tomcat
@@ -34,20 +36,57 @@ This is used in the demonstration of development of java web applications.
        export JAVA_HOME
        CATALINA_HOME=/opt/servers/tomcat8
        export CATALINA_HOME
-       PATH=$JAVA_HOME/bin:$PATH:$CATALINA_HOME/bin
+       MAVEN_HOME=/usr/share/maven
+       export MAVEN_HOME
+       PATH=$JAVA_HOME/bin:$PATH:$CATALINA_HOME/bin:$MAVEN_HOME
        export PATH
      :wq
      
+     ln -s /opt/servers/tomcat8/bin/startup.sh /usr/local/bin/starttomcat
+     ln -s /opt/servers/tomcat8/bin/shutdown.sh /usr/local/bin/stoptomcat
 
 ## 3. Start tomcat Service
-  - Start the tomcat service
-    
-        vi /opt/servers/tomcat8/conf/tomcat-users.xml
-          edit the user with the following roles 
-          manager-gui, manager-jmx, manager-status, manager-script roles
+  - tomcat-users.xml
+   
+        $vi /opt/servers/tomcat8/conf/tomcat-users.xml
+          edit the users with the following roles 
+          manager-gui, manager-jmx, manager-script roles
+          
+           <role rolename="manager-jmx"/>
+           <role rolename="manager-script"/>
+           <role rolename="manager-gui"/>
+           <user username="jenkinsuser" password="jenkinsuser" roles="manager-script"/>
+           <user username="tomcat" password="password" roles="manager-gui"/>
+           <user username="admin" password="password" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+ 
         :wq
         
-        catalina.sh start
+   
+  - Context.xml
+   
+        Comment the lines in the context files
+        $ vi /opt/servers/tomcat8/webapps/host-manager/META-INF/context.xml
+        $ vi /opt/servers/tomcat8/webapps/manager/META-INF/context.xml
+ 
+           <!--
+              <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+              allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+           -->
+         
+         :wq
+        
+  - server.xml
+   
+        About port number: 8080
+        check the connector-port in line number 69 of the file /opt/servers/tomcat8/conf/server.xml
+        is opened or not. We can change the default port number here, if we want to run multiple 
+        tomcat servers, in the same system.
+
+        
+  - start tomcat server.xml
+        
+        Finally start the tomcat service
+        $starttomcat
 
     
 ## 4. Install and Configure Jenkins Server
@@ -60,13 +99,13 @@ Install Jenkins
     copy paste the initialadminpassword from the file .jenkins/secrets/initialadminpassword file
     and select the default plugins to install and create a new user
     maven invoker, deploy to container, github
-    set up credentials for tomcat servers
+    check up credentials for tomcat servers
       tomcat-users.xml
-        deployer with role manager-script 
+        jenkinsuser with role manager-script 
     
     goto jenkins, add credentials,
-      username - deployer
-      password:
+      username - jenkinsuser
+      password: <password>
       id and descriptions
     
 
@@ -105,10 +144,10 @@ Create a new free style job
     post-build actions
       war/ear files
        **/*.war
-      context path - leave it emplty
+      context path - leave it empty
       containers - select tomcat 8.x
       Also need to provide tomcat credentials
-        choose - deployer/***
+        choose - jenkinsuser/***
         tomcat url: http://the romoteserverIP:8080
    
 Now build the job
