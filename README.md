@@ -116,7 +116,7 @@ Now build the job
 Check the directory of webapps to confirm.
     
     
-## 6. Test
+## 8. Test
 
 Open a browser and go to URL
 
